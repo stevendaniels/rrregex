@@ -26,13 +26,16 @@
 		}
 
 		function display_captures(captures) {
+			$("#resp_captures span").html('');
+
 			if (captures != null && captures.length > 0)  {
 				$("#resp_captures").show();
-				$("#resp_captures span").html(Mustache.to_html(captures_tmpl, resp));  
+        			$.each(captures, function(k,v){
+            				$("#resp_captures span").append(Mustache.to_html(captures_tmpl, {captures: v}));  
+           			});
 			}
 			else {
 				$("#resp_captures").hide();
-				$("#resp_captures span").html('');
 			}
 		}
 
