@@ -75,7 +75,8 @@
 					display_captures(resp.captures);
 
 					if (resp.result == true) {
-						display_matches(resp);
+            display_matches(resp);
+            display_error();
 					} else {
 						display_error(resp.error)
 						if (!resp.error) { display_matches(null); }
