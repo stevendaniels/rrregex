@@ -8,10 +8,22 @@
 		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>
 		<script src="mustache.js" type="text/javascript" charset="utf-8"></script>
 		<link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
-		<script type="text/javascript">
+<script type="text/javascript">
 //<![CDATA[
 		var captures_tmpl = "<ol>{{#captures}}<li>{{.}}<\/li>{{/captures}}<\/ol>"
-		var match_tmpl = "{{match}}"
+    var match_tmpl = "{{match}}"
+    var submissions = {};
+
+    function hash_code(str) {
+      var hash = 0, i, char;
+      if (str.length == 0) return hash;
+      for (i = 0, l = str.length; i < l; i++) {
+        char  = str.charCodeAt(i);
+        hash  = ((hash<<5)-hash)+char;
+        hash |= 0; // Convert to 32bit integer
+      }
+      return hash;
+    };
 
 		function reset() {
 			$("rrregex").each(function() {
@@ -23,7 +35,23 @@
 			display_captures(null);
 			$("#test_str").toggleClass("success", false);
 			$("#test_str").toggleClass("error", false);
-		}
+    }
+
+    function display_response(resp) {
+	    $("#test_str").toggleClass("success", resp.result);
+			$("#test_str").toggleClass("error", (!resp.result) && (!resp.error));
+			(resp.result == true) ? $("#resp").show() : $("#resp").hide();
+
+			display_captures(resp.captures);
+
+			if (resp.result == true) {
+        display_matches(resp);
+        display_error();
+			} else {
+		  	display_error(resp.error)
+				if (!resp.error) { display_matches(null); }
+			}
+    }
 
 		function display_captures(captures) {
       $("#resp_captures span").html('');
@@ -62,30 +90,28 @@
 		}
 
 		function do_match() {
-			$.ajax({
+      var postData = encodeURI($("#rrregex").serialize()),
+          postHash = hash_code(postData),
+          resp;
+
+      if(!submissions[postHash]){
+      $.ajax({
 				type: 'POST',
 				url: "match",
-				data: encodeURI($("#rrregex").serialize()),
+				data: postData,
 				success: function(data, textStatus, jqXHR) {
-					resp = JSON.parse(data);
-					$("#test_str").toggleClass("success", resp.result);
-					$("#test_str").toggleClass("error", (!resp.result) && (!resp.error));
-					(resp.result == true) ? $("#resp").show() : $("#resp").hide();
-
-					display_captures(resp.captures);
-
-					if (resp.result == true) {
-            display_matches(resp);
-            display_error();
-					} else {
-						display_error(resp.error)
-						if (!resp.error) { display_matches(null); }
-					}
+          resp = JSON.parse(data);
+          submissions[postHash] = resp;
+          display_response(resp);
 				} // success func
 			   })
 			.error(function(data, textStatus, jqXHR) {
 				alert(data.status + ": " + data.responseText);
-			});
+        });
+      }else{
+        resp = submissions[postHash];
+        display_response(resp);
+      }
 		}
 
 		// setup keyboard handlers on all the necessary UI elements
@@ -106,8 +132,7 @@
 			$("#regex_error").hide();
 		});
 		//]]>
-		</script>
-	</head>
+		</script>	</head>
 	<body style="background:#6D6E71">
 		<div class="container">
 			<div class="row">
